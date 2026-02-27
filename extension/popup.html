@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scraper</title>
+  <style>
+    body {
+      width: 250px;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      text-align: center;
+      background-color: #f9f9f9;
+    }
+    button {
+      background-color: #2563eb;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      margin: 10px 0;
+      cursor: pointer;
+      border-radius: 6px;
+      width: 100%;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #333;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h3>Web Scraper</h3>
+  <p style="font-size: 13px; color: #555;">Send page data to API.</p>
+  <button id="extractBtn">Extract & Send Data</button>
+  <div id="status">Ready</div>
+  <script src="popup.js"></script>
+</body>
+</html>
