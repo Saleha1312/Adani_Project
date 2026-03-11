@@ -41,11 +41,11 @@ async def save_scraped_data(data: ScrapedDataInput):
         )
         
         if result.upserted_id:
-            print(f"✅ Data extracted and saved successfully to MongoDB! Inserted ID: {result.upserted_id}")
+            print(f"Data extracted and saved successfully to MongoDB! Inserted ID: {result.upserted_id}")
             inserted_id = str(result.upserted_id)
             message = "Data saved successfully"
         else:
-            print(f"✅ Data for URL {url} updated successfully in MongoDB!")
+            print(f"Data for URL {url} updated successfully in MongoDB!")
             inserted_id = None # or we could fetch the existing ID if needed
             message = "Data updated successfully"
 
@@ -54,5 +54,20 @@ async def save_scraped_data(data: ScrapedDataInput):
             "inserted_id": inserted_id
         }
     except Exception as e:
-        print(f"❌ Error saving extracted data: {str(e)}")
+        print(f"Error saving extracted data: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error saving data: {str(e)}")
+
+from pydantic import BaseModel
+from rag_chatbot import get_answer
+
+class ChatRequest(BaseModel):
+    question: str
+
+@app.post("/chat")
+async def chat_endpoint(request: ChatRequest):
+    try:
+        answer = get_answer(request.question)
+        return {"answer": answer}
+    except Exception as e:
+        print(f"Error generating chat response: {e}")
+        raise HTTPException(status_code=500, detail="Error generating chat response.")

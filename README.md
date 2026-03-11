@@ -1,38 +1,52 @@
-# Web Scraper Plugin and FastAPI Backend
+# Web Scraper Plugin & RAG Chatbot
 
-This project consists of two components:
-1. A **Chrome Extension** (plugin) that extracts structured data (URL, titles, headings, and links) from any active web page.
-2. A **FastAPI Backend** that receives this JSON data and stores it in a **MongoDB Atlas** database.
+This project consists of three main components:
+1. A **Chrome Extension** (plugin) that extracts structured monitoring data from web pages.
+2. A **FastAPI Backend** that receives this JSON data, stores it in **MongoDB Atlas**, and serves a RAG-based AI chatbot using **ChromaDB** and **Ollama**.
+3. A **Chat UI Frontend** that lets you ask questions to an AI assistant about your saved server metrics.
 
 ---
 
-## 🚀 1. Backend Setup
+## 🚀 1. Backend & Chatbot Setup
 
 ### Prerequisites
-You will need Python installed on your machine and a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register) cluster account.
+- Python 3 installed
+- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register) cluster account
+  - **Important Note:** Both the web scraper and chatbot use the `scraper_db` database and `scraped_data` collection by default.
+- [Ollama](https://ollama.com/) installed locally to run the LLM
 
 ### Instructions
 1. Navigate to the `backend` directory in your terminal:
    ```bash
-   cd c:\Users\caelumpirata\Desktop\Adani_project\web_scraper_project\backend
+   cd backend
    ```
-2. (Optional but recommended) Create and activate a Virtual Environment:
+2. Create and activate a Virtual Environment (Recommended):
    ```bash
    python -m venv venv
-   .\venv\Scripts\activate
+   .\venv\Scripts\activate  # Windows
+   # source venv/bin/activate # Mac/Linux
    ```
-3. Install the required Python packages:
+3. Install the required packages:
    ```bash
    pip install -r requirements.txt
    ```
 4. Set up your Environment Variables:
-   - Rename the `.env.example` file to `.env` (or create a new `.env` file).
-   - Get the connection string from your MongoDB Atlas dashboard.
-   - Edit the `.env` file and set the `MONGODB_URI` variable:
+   - Create a `.env` file in the `backend/` folder.
+   - Add your connection string:
      ```
-     MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/myDatabase?retryWrites=true&w=majority"
+     MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?appName=Cluster0"
      ```
-5. Run the FastAPI Server:
+5. Ensure Ollama is running and has the `llama3` model pulled:
+   ```bash
+   ollama serve
+   # In another terminal:
+   ollama pull llama3
+   ```
+6. **Initialize the Vector Database**: Run the embedding pipeline once to load data from MongoDB into ChromaDB.
+   ```bash
+   python embedding_pipeline.py
+   ```
+7. Run the FastAPI Server:
    ```bash
    uvicorn main:app --reload
    ```
@@ -40,22 +54,23 @@ You will need Python installed on your machine and a [MongoDB Atlas](https://www
 
 ---
 
-## 🧩 2. Extension Setup
+## 🧩 2. Extension Setup (Web Scraper)
 
 1. Open **Google Chrome**.
 2. Type `chrome://extensions/` in the URL bar and press Enter.
-3. Turn on **Developer mode** (the toggle switch in the top right corner).
-4. Click the **Load unpacked** button in the top left.
-5. In the file dialog, select the `extension` folder located inside this project:
-   `c:\Users\caelumpirata\Desktop\Adani_project\web_scraper_project\extension`
+3. Turn on **Developer mode** (top right corner).
+4. Click **Load unpacked** (top left).
+5. Select the `extension` folder located inside this project.
+6. Open any monitoring page, click the extension icon, and click **Extract & Send Data**. It will automatically save to your MongoDB collection!
 
 ---
 
-## 🎯 Usage
+## 🤖 3. Using the AI Chatbot
 
-1. Ensure your FastAPI server is running (`uvicorn main:app`).
-2. Open any webpage you want to scrape in Google Chrome.
-3. Click the **Web Scraper** extension icon in your Chrome toolbar (it might be shaped like a puzzle piece if you haven't pinned it).
-4. Click the **Extract & Send Data** button.
-5. You should see a "Success" message in the popup.
-6. Check your FastAPI terminal console and your MongoDB Atlas database collection to see the saved data!
+1. Ensure the Python backend (`uvicorn main:app`) and Ollama (`ollama serve`) are both running.
+2. Open the file `frontend/index.html` in any web browser.
+3. You will see the **System Monitor AI** chat interface.
+4. Ask it questions about your scraped monitoring data, for example:
+   - *"What is the CPU usage status?"*
+   - *"Show me the disk partition details."*
+5. The AI will retrieve the most relevant data from your MongoDB database and provide an answer!
