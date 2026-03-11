@@ -19,12 +19,18 @@ app.add_middleware(
 async def root():
     return {"message": "Web Scraper API is running. Send POST requests to /api/data"}
 
+from parsers import parse_dashboard_monitors
+
 @app.post("/api/data")
 async def save_scraped_data(data: ScrapedDataInput):
     try:
         # Prepare the document for MongoDB insertion
         document = data.model_dump()
         document["timestamp"] = datetime.utcnow()
+        
+        # Parse dashboard monitors from the raw scraped content if present
+        monitors = parse_dashboard_monitors(data.raw_content)
+        document["dashboard_monitors"] = monitors
         
         # Upsert into MongoDB based on URL
         url = document.get("url")

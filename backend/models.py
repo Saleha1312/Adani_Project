@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 class PerformanceMetrics(BaseModel):
@@ -30,6 +30,15 @@ class ResourceDetails(BaseModel):
     public_ip: Optional[str] = None
     location: Optional[str] = None
 
+class DashboardMonitor(BaseModel):
+    hostname: str
+    os: str
+    monitor_type: Optional[str] = None
+    tags: List[str] = []
+    value: Optional[str] = None
+    unit: Optional[str] = None
+    last_updated: Optional[str] = None
+
 class ScrapedDataInput(BaseModel):
     url: str
     title: str
@@ -38,6 +47,7 @@ class ScrapedDataInput(BaseModel):
     performance: PerformanceMetrics
     system: SystemDetails
     resources: ResourceDetails
+    dashboard_monitors: List[DashboardMonitor] = []
 
 class ScrapedData(ScrapedDataInput):
     id: str = Field(alias="_id", default=None)
