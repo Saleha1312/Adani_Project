@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Web Scraper Plugin & RAG Chatbot
 
 This project consists of three main components:
@@ -74,3 +75,7 @@ This project consists of three main components:
    - *"What is the CPU usage status?"*
    - *"Show me the disk partition details."*
 5. The AI will retrieve the most relevant data from your MongoDB database and provide an answer!
+=======
+# Adani_Project
+AI-powered web intelligence system that extracts webpage data via a browser extension (HTML, CSS, JS). Data is processed with FastAPI and stored in MongoDB Atlas. ChromaDB converts data into vector embeddings for semantic analysis. A trained LLM detects anomalies from historical and real-time data, visualized through a time-based dashboard.
+>>>>>>> 7ec89c3ddb0f71c30684102725e5740aee349269
