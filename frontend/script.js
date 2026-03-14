@@ -32,8 +32,7 @@ async function sendMessage() {
     userInput.disabled = true;
     sendButton.disabled = true;
 
-    // Optional: Add a "typing..." indicator here
-    // Change button text to a search icon/spinner
+    // Change button text to a loading spinner
     const originalButtonText = sendButton.innerHTML;
     sendButton.innerHTML = '<div class="spinner"></div>';
 
@@ -64,10 +63,15 @@ async function sendMessage() {
     }
 }
 
-sendButton.addEventListener('click', sendMessage);
+// Listen for a click on the Send button
+sendButton.addEventListener('click', () => {
+    sendMessage();
+});
 
-userInput.addEventListener('keypress', (e) => {
+// Listen for the "Enter" key in the input field
+userInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
+        e.preventDefault();
         sendMessage();
     }
 });

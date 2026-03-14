@@ -17,7 +17,8 @@ def get_answer(question: str) -> str:
     
     # 2. Search ChromaDB
     print("Searching ChromaDB...")
-    results = query_chroma(question_embedding, n_results=5)
+    # Reduced n_results to 3 to prevent potential OOM/runner crashes
+    results = query_chroma(question_embedding, n_results=3)
     
     # Extract the retrieved document texts
     retrieved_documents = results.get('documents', [[]])[0]
@@ -26,6 +27,9 @@ def get_answer(question: str) -> str:
          context_text = "No relevant context found."
     else:
          context_text = "\n\n---\n\n".join(retrieved_documents)
+         # Truncate context if it's too long to prevent runner crashes
+         if len(context_text) > 8000:
+             context_text = context_text[:8000] + "... [Context Truncated]"
          
     # 3. Construct the Prompt Template
     prompt = f"""You are a system monitoring assistant.
@@ -50,9 +54,12 @@ Provide a clear and accurate answer based only on the monitoring data."""
     
     try:
         response = requests.post(OLLAMA_URL, json=payload)
-        response.raise_for_status()
+        if response.status_code != 200:
+            print(f"Ollama error {response.status_code}: {response.text}")
+            return f"Error from Ollama ({response.status_code}): {response.text}"
+            
         data = response.json()
         return data.get("response", "Error: No response from model.")
     except Exception as e:
-        print(f"Ollama error: {e}")
+        print(f"Connection error: {e}")
         return f"Sorry, I encountered an error connecting to the language model: {str(e)}"
