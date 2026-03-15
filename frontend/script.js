@@ -63,15 +63,9 @@ async function sendMessage() {
     }
 }
 
-// Listen for a click on the Send button
-sendButton.addEventListener('click', () => {
+// Listen for the form submission (covers both button click and Enter key)
+const chatForm = document.getElementById('chat-form');
+chatForm.addEventListener('submit', (e) => {
+    e.preventDefault();
     sendMessage();
-});
-
-// Listen for the "Enter" key in the input field
-userInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        sendMessage();
-    }
 });
