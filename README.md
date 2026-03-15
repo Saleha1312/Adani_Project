@@ -6,6 +6,7 @@ ADBOT is a high-performance RAG (Retrieval-Augmented Generation) chatbot system 
 - **Intelligent RAG Chatbot**: Uses ChromaDB and Ollama to answer questions based on your system metrics.
 - **Customized ADBOT UI**: Features a modern, blue-to-pink gradient interface with real-time "searching" animations.
 - **Web Scraper (Chrome Extension)**: Extract server data and save directly to MongoDB Atlas.
+- **Backend Response Timer**: Logs the exact time taken to generate an answer directly in your terminal.
 - **Persistent Knowledge**: Data is embedded once into a vector database for instant retrieval.
 
 ---
@@ -83,6 +84,7 @@ uvicorn main:app --reload
 ---
 
 ## 🛠 Troubleshooting
-- **Memory Errors**: If you get "unable to allocate CPU buffer," ensure you follow the E: drive workaround or consider a lighter model.
+- **Speed Optimization**: If answers take too long (e.g., several minutes), we use **`llama3.2:1b`**, which is optimized for fast performance on standard consumer hardware.
+- **Memory Errors**: If you get "unable to allocate CPU buffer," ensure you follow the E: drive workaround or use the lightweight 1B model.
 - **Page Refresh**: The chat interface uses form-submission handling to prevent the page from refreshing when you press Enter.
 - **Disk Space**: Ensure you have at least 5GB free on the drive where Ollama models are stored.
