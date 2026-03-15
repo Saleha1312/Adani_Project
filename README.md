@@ -88,3 +88,11 @@ uvicorn main:app --reload
 - **Memory Errors**: If you get "unable to allocate CPU buffer," ensure you follow the E: drive workaround or use the lightweight 1B model.
 - **Page Refresh**: The chat interface uses form-submission handling to prevent the page from refreshing when you press Enter.
 - **Disk Space**: Ensure you have at least 5GB free on the drive where Ollama models are stored.
+
+---
+
+## 🧹 5. Managing Models
+To keep your system fast and save disk space, you can use these commands:
+- **List installed models**: `ollama list`
+- **Remove a model**: `ollama rm <model_name>` (example: `ollama rm llama3`)
+- **Move models to E: drive**: See Section 2A.
