@@ -3,13 +3,19 @@ from embedding_pipeline import model as embedding_model
 from chroma_store import query_chroma
 import json
 import time
+import os
+from dotenv import load_dotenv
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "llama3.2"
+# Load environment variables
+load_dotenv()
+
+LLM_API_URL = os.getenv("LLM_API_BASE_URL", "http://localhost:11434/api/generate")
+LLM_API_KEY = os.getenv("OLLAMA_API_KEY", "")
+MODEL_NAME = os.getenv("MODEL_NAME", "llama3.1")
 
 def get_answer(question: str) -> str:
     """
-    Takes a user question, retrieves context from ChromaDB, and generates an answer using Ollama.
+    Takes a user question, retrieves context from ChromaDB, and generates an answer using an LLM API.
     """
     print(f"Question: {question}")
     
@@ -45,25 +51,45 @@ User Question:
 
 Provide a clear and accurate answer based only on the monitoring data."""
 
-    # 4. Query Ollama
-    print("Querying Ollama...")
-    payload = {
-        "model": MODEL_NAME,
-        "prompt": prompt,
-        "stream": False
-    }
+    # 4. Query LLM API
+    print(f"Querying LLM API ({MODEL_NAME})...")
+    
+    # Check if we are using an OpenAI-compatible endpoint
+    is_openai_compatible = "/v1/chat/completions" in LLM_API_URL
+    
+    if is_openai_compatible:
+        payload = {
+            "model": MODEL_NAME,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant specialized in system monitoring."},
+                {"role": "user", "content": prompt}
+            ],
+            "stream": False
+        }
+        headers = {
+            "Authorization": f"Bearer {LLM_API_KEY}",
+            "Content-Type": "application/json"
+        }
+    else:
+        # Default to Ollama format if not OpenAI-compatible
+        payload = {
+            "model": MODEL_NAME,
+            "prompt": prompt,
+            "stream": False
+        }
+        headers = {}
     
     start_time = time.time()  # Start the timer
     
     try:
-        response = requests.post(OLLAMA_URL, json=payload)
+        response = requests.post(LLM_API_URL, json=payload, headers=headers)
         end_time = time.time()  # End the timer
         duration = end_time - start_time
         
         if response.status_code != 200:
-            print(f"Ollama error {response.status_code}: {response.text}")
+            print(f"API error {response.status_code}: {response.text}")
             print(f"Time taken (failed): {duration:.2f} seconds")
-            return f"Error from Ollama ({response.status_code}): {response.text}"
+            return f"Error from LLM API ({response.status_code}): {response.text}"
             
         # Display the timing in the terminal
         if duration >= 60:
@@ -74,7 +100,12 @@ Provide a clear and accurate answer based only on the monitoring data."""
             print(f"Chatbot give answer in {duration:.2f} seconds")
 
         data = response.json()
-        return data.get("response", "Error: No response from model.")
+        
+        if is_openai_compatible:
+            return data.get("choices", [{}])[0].get("message", {}).get("content", "Error: No response content.")
+        else:
+            return data.get("response", "Error: No response from model.")
+            
     except Exception as e:
         end_time = time.time()
         duration = end_time - start_time

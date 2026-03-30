@@ -1,13 +1,14 @@
 # ADBOT - AI Monitoring Assistant
 
-ADBOT is a high-performance RAG (Retrieval-Augmented Generation) chatbot system integrated with a web scraping engine. It extracts structured monitoring data via a Chrome extension, processes it with FastAPI, and enables semantic querying using local LLMs.
+ADBOT is a high-performance RAG (Retrieval-Augmented Generation) chatbot system integrated with a web scraping engine. It extracts structured monitoring data via a Chrome extension, processes it with FastAPI, and enables semantic querying using **Groq Cloud API** and **Llama 3.1**.
 
 ## 🌟 Key Features
-- **Intelligent RAG Chatbot**: Uses ChromaDB and Ollama to answer questions based on your system metrics.
+- **High-Speed RAG Chatbot**: Powered by **Groq Cloud** for near-instant responses (sub-second latency).
+- **Llama 3.1 8B/70B**: Uses the latest state-of-the-art Meta models for accurate system analysis.
 - **Customized ADBOT UI**: Features a modern, blue-to-pink gradient interface with real-time "searching" animations.
 - **Web Scraper (Chrome Extension)**: Extract server data and save directly to MongoDB Atlas.
 - **Backend Response Timer**: Logs the exact time taken to generate an answer directly in your terminal.
-- **Persistent Knowledge**: Data is embedded once into a vector database for instant retrieval.
+- **Persistent Knowledge**: Data is embedded once into a vector database (ChromaDB) for instant retrieval.
 
 ---
 
@@ -16,7 +17,7 @@ ADBOT is a high-performance RAG (Retrieval-Augmented Generation) chatbot system 
 ### Prerequisites
 - **Python 3.10+** installed
 - **[MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register)** account (uses `scraper_db.scraped_data` by default)
-- **[Ollama](https://ollama.com/)** installed locally
+- **[Groq Cloud API Key](https://console.groq.com/keys)** (Free tier available)
 
 ### Setup Instructions
 1. **Navigate to the Backend**:
@@ -36,28 +37,22 @@ ADBOT is a high-performance RAG (Retrieval-Augmented Generation) chatbot system 
    Create a `.env` file in the `backend/` folder:
    ```env
    MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.ftgbsda.mongodb.net/?appName=Cluster0"
+   LLM_API_BASE_URL="https://api.groq.com/openai/v1/chat/completions"
+   OLLAMA_API_KEY="your_gsk_api_key_here"
+   MODEL_NAME="llama-3.1-8b-instant"
    ```
 
 ---
 
 ## 🧠 2. Running the AI Pipeline
 
-### A. Ollama Configuration (Important)
-If your **C: drive is full**, move your AI models to another drive (e.g., E:):
-1. Create `E:\OllamaModels`.
-2. Set Environment Variable: `OLLAMA_MODELS = "E:\OllamaModels"`.
-3. Restart Ollama and run:
-   ```bash
-   ollama pull llama3
-   ```
-
-### B. Embedding Data (Run Once)
+### A. Embedding Data (Run Once)
 You only need to run this command when you have **new data** in MongoDB. It generates semantic embeddings and stores them in ChromaDB.
 ```bash
 python embedding_pipeline.py
 ```
 
-### C. Start the Backend API
+### B. Start the Backend API
 ```bash
 uvicorn main:app --reload
 ```
@@ -83,16 +78,16 @@ uvicorn main:app --reload
 
 ---
 
-## 🛠 Troubleshooting
-- **Speed Optimization**: If answers take too long (e.g., several minutes), we use **`llama3.2:1b`**, which is optimized for fast performance on standard consumer hardware.
-- **Memory Errors**: If you get "unable to allocate CPU buffer," ensure you follow the E: drive workaround or use the lightweight 1B model.
-- **Page Refresh**: The chat interface uses form-submission handling to prevent the page from refreshing when you press Enter.
-- **Disk Space**: Ensure you have at least 5GB free on the drive where Ollama models are stored.
+## 🛠 Tech Stack Details
+- **Frontend**: HTML5, Vanilla CSS, JavaScript.
+- **Backend**: FastAPI (Python).
+- **LLM**: Meta Llama 3.1 via **Groq Cloud API**.
+- **Vector DB**: ChromaDB for semantic retrieval.
+- **Main DB**: MongoDB Atlas for raw monitoring data.
+- **Embeddings**: `sentence-transformers` (all-MiniLM-L6-v2).
 
 ---
 
-## 🧹 5. Managing Models
-To keep your system fast and save disk space, you can use these commands:
-- **List installed models**: `ollama list`
-- **Remove a model**: `ollama rm <model_name>` (example: `ollama rm llama3`)
-- **Move models to E: drive**: See Section 2A.
+## 🧹 Managing the Repository
+- **Security**: The `.env` file is ignored by Git to prevent API key leaks.
+- **Logs**: Backend logs are stored in `debug_chatbot.log`.

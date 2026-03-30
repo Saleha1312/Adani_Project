@@ -1,0 +1,23 @@
+# Environment variables
+backend/.env
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+ENV/
+env/
+.venv/
+
+# AI / Databases
+backend/chroma_data/
+backend/chroma_db/
+chroma_data/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
