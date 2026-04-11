@@ -15,33 +15,59 @@ MODEL_NAME = os.getenv("MODEL_NAME", "llama3.1")
 
 def get_answer(question: str) -> str:
     """
-    Takes a user question, retrieves context from ChromaDB, and generates an answer using an LLM API.
+    Takes a user question, retrieves context from ChromaDB using smart filtering, 
+    and generates an accurate answer using an LLM API.
     """
     print(f"Question: {question}")
     
-    # 1. Embed the question
+    # 1. Detect Terminal for Smart Filtering
+    terminal_filter = None
+    for term in ["SPRH", "CT2", "CT3", "CT4"]:
+        if term in question.upper():
+            terminal_filter = term
+            print(f"Detected filter for Terminal: {terminal_filter}")
+            break
+            
+    # 2. Embed the question
     question_embedding = embedding_model.encode([question]).tolist()[0]
     
-    # 2. Search ChromaDB
+    # 3. Search ChromaDB with optional filtering
     print("Searching ChromaDB...")
-    # Reduced n_results to 3 to prevent potential OOM/runner crashes
-    results = query_chroma(question_embedding, n_results=3)
     
-    # Extract the retrieved document texts
+    # Use metadata filter if a terminal was detected
+    where_clause = {"terminal": terminal_filter} if terminal_filter else None
+    
+    # If filtered, we can afford more results (up to 10) for better accuracy.
+    # If not filtered, we keep it lower to avoid token overflow.
+    n_results = 10 if terminal_filter else 5
+    
+    results = query_chroma(question_embedding, n_results=n_results, where=where_clause)
+    
+    # Extract the retrieved document texts and metadatas
     retrieved_documents = results.get('documents', [[]])[0]
+    retrieved_metadatas = results.get('metadatas', [[]])[0]
     
     if not retrieved_documents:
          context_text = "No relevant context found."
     else:
-         context_text = "\n\n---\n\n".join(retrieved_documents)
-         # Truncate context if it's too long to prevent runner crashes
-         if len(context_text) > 8000:
-             context_text = context_text[:8000] + "... [Context Truncated]"
+         context_chunks = []
+         for doc, meta in zip(retrieved_documents, retrieved_metadatas):
+             timestamp = meta.get("timestamp", "Unknown Date")
+             context_chunks.append(f"--- Data Point ({timestamp}) ---\n{doc}")
          
-    # 3. Construct the Prompt Template
-    prompt = f"""You are a system monitoring assistant.
+         context_text = "\n\n".join(context_chunks)
+         # Truncate context if it's too long
+         if len(context_text) > 4000:
+             context_text = context_text[:4000] + "... [Context Truncated]"
+         
+    from datetime import datetime
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-Use the following monitoring data to answer the user's question.
+    # 4. Construct the Prompt Template
+    prompt = f"""You are a system monitoring assistant for the Adani terminals.
+Current Server Time: {current_time}
+
+Use the following monitoring data context to answer the user's question accurately.
 
 Monitoring Data Context:
 {context_text}
@@ -49,9 +75,9 @@ Monitoring Data Context:
 User Question:
 {question}
 
-Provide a clear and accurate answer based only on the monitoring data."""
+Provide a clear and accurate answer based only on the monitoring data provided."""
 
-    # 4. Query LLM API
+    # 5. Query LLM API
     print(f"Querying LLM API ({MODEL_NAME})...")
     
     # Check if we are using an OpenAI-compatible endpoint
@@ -79,26 +105,17 @@ Provide a clear and accurate answer based only on the monitoring data."""
         }
         headers = {}
     
-    start_time = time.time()  # Start the timer
-    
+    start_time = time.time()
     try:
         response = requests.post(LLM_API_URL, json=payload, headers=headers)
-        end_time = time.time()  # End the timer
+        end_time = time.time()
         duration = end_time - start_time
         
         if response.status_code != 200:
             print(f"API error {response.status_code}: {response.text}")
-            print(f"Time taken (failed): {duration:.2f} seconds")
             return f"Error from LLM API ({response.status_code}): {response.text}"
             
-        # Display the timing in the terminal
-        if duration >= 60:
-            minutes = duration // 60
-            seconds = duration % 60
-            print(f"Chatbot give answer in {int(minutes)} min {int(seconds)} sec")
-        else:
-            print(f"Chatbot give answer in {duration:.2f} seconds")
-
+        print(f"Chatbot answered in {duration:.2f} seconds")
         data = response.json()
         
         if is_openai_compatible:
@@ -107,8 +124,5 @@ Provide a clear and accurate answer based only on the monitoring data."""
             return data.get("response", "Error: No response from model.")
             
     except Exception as e:
-        end_time = time.time()
-        duration = end_time - start_time
         print(f"Connection error: {e}")
-        print(f"Time taken (error): {duration:.2f} seconds")
         return f"Sorry, I encountered an error connecting to the language model: {str(e)}"

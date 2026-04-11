@@ -34,12 +34,27 @@ def add_documents_to_chroma(ids, embeddings, documents, metadatas):
         metadatas=metadatas
     )
 
-def query_chroma(query_embedding, n_results=5):
+def query_chroma(query_embedding, n_results=5, where=None):
     """
     Queries ChromaDB to find the most similar documents.
     """
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=n_results
+        n_results=n_results,
+        where=where
     )
     return results
+
+def clear_collection():
+    """
+    Deletes the current collection and recreates it to ensure a fresh sync.
+    """
+    global collection
+    try:
+        client.delete_collection(name=COLLECTION_NAME)
+        print(f"Collection '{COLLECTION_NAME}' deleted successfully.")
+    except Exception as e:
+        print(f"Collection '{COLLECTION_NAME}' not found or already deleted: {e}")
+    
+    collection = get_or_create_collection()
+    print(f"Collection '{COLLECTION_NAME}' recreated.")
