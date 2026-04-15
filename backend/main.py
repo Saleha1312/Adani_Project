@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException # v1.0.1
 from fastapi.middleware.cors import CORSMiddleware
 from models import ScrapedDataInput
 from database import collection
@@ -32,22 +32,12 @@ async def save_scraped_data(data: ScrapedDataInput):
         monitors = parse_dashboard_monitors(data.raw_content)
         document["dashboard_monitors"] = monitors
         
-        # Upsert into MongoDB based on URL
-        url = document.get("url")
-        result = await collection.update_one(
-            {"url": url}, 
-            {"$set": document}, 
-            upsert=True
-        )
+        # Insert into MongoDB as a new separate document every time
+        result = await collection.insert_one(document)
         
-        if result.upserted_id:
-            print(f"Data extracted and saved successfully to MongoDB! Inserted ID: {result.upserted_id}")
-            inserted_id = str(result.upserted_id)
-            message = "Data saved successfully"
-        else:
-            print(f"Data for URL {url} updated successfully in MongoDB!")
-            inserted_id = None # or we could fetch the existing ID if needed
-            message = "Data updated successfully"
+        print(f"Data extracted and saved successfully to MongoDB! Inserted ID: {result.inserted_id}")
+        inserted_id = str(result.inserted_id)
+        message = "Data saved as a new record successfully"
 
         return {
             "message": message,

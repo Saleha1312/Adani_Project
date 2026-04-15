@@ -9,30 +9,12 @@
     }
 
     try {
-        const currentDomain = window.location.hostname;
-
-        // Wait for chrome.storage to tell us if this domain is enabled
-        const isActive = await new Promise((resolve) => {
-            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-                chrome.storage.local.get(['active_domains'], function (result) {
-                    const activeDomains = result.active_domains || [];
-                    resolve(activeDomains.includes(currentDomain));
-                });
-            } else {
-                resolve(false);
-            }
-        });
-
-        if (!isActive) {
-            console.log("Web Data Scraper: auto-extraction not enabled for " + currentDomain);
-            return { success: false, error: "Auto-extraction is not enabled for this site yet. Click the extension popup to start." };
-        }
-
-        // Mark as initialized so we don't attach multiple observers
+        // Mark as initialized so we don't attach multiple redundant listeners if script is re-injected
         window.__scraperInitialized = true;
 
         async function extractAndSendData() {
             try {
+                console.log("Web Data Scraper: Manual extraction initiated...");
                 // 1. Extract Data from DOM
                 const url = window.location.href;
                 const title = document.title;
@@ -103,7 +85,7 @@
                     location: getValueAfter("Country") ? `${getValueAfter("Country")}, ${getValueAfter("Region") || ""}`.trim().replace(/,$/, "") : null
                 };
 
-                // Prepare payload to match our new Pydantic schema
+                // Prepare payload
                 const payload = {
                     url: url,
                     title: title,
@@ -115,7 +97,6 @@
                 };
 
                 // 2. Send to Backend API
-                // Make sure the FastAPI server is running on localhost:8000
                 const response = await fetch('http://localhost:8000/api/data', {
                     method: 'POST',
                     headers: {
@@ -131,7 +112,7 @@
                 }
 
                 const data = await response.json();
-                console.log("Web Data Scraper: Data updated successfully", data.inserted_id);
+                console.log("Web Data Scraper: Data saved as a new record. ID:", data.inserted_id);
 
                 return { success: true, id: data.inserted_id };
 
@@ -144,28 +125,10 @@
         // Expose function globally for manual trigger from popup
         window.extractAndSendData = extractAndSendData;
 
-        // Run immediately upon activation/load
-        extractAndSendData();
+        // No automatic execution here. No MutationObserver.
+        // The extraction will ONLY occur when the popup button calls extractAndSendData().
 
-        // Implement MutationObserver to detect DOM changes (real-time data updates) after initial trigger
-        let timeoutId = null;
-        const observer = new MutationObserver((mutations) => {
-            // Debounce: Wait 2 seconds after the DOM STOPS updating before we scrape to avoid spamming the server
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => {
-                console.log("Web Data Scraper: Real-time DOM change detected, updating data...");
-                extractAndSendData();
-            }, 2000);
-        });
-
-        // Start observing the document body for added/removed nodes or text changes
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            characterData: true
-        });
-
-        return { success: true, message: "Scraper initialized and watching for real-time changes." };
+        return { success: true, message: "Scraper ready for manual extraction." };
 
     } catch (error) {
         console.error("Scraper Initialization Error:", error);
