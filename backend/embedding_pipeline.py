@@ -54,9 +54,9 @@ def process_document(doc):
     title = doc.get("title", "Unknown Monitor")
     raw_content = doc.get("raw_content", [])
     
-    # Extract Terminal Name from title (e.g. SPRH, CT2, CT3, CT4)
+    # Extract Terminal Name from title (e.g. SPRH, T2, CT2, CT3, CT4)
     terminal = "Unknown"
-    for term in ["SPRH", "CT2", "CT3", "CT4"]:
+    for term in ["SPRH", "CT2", "CT3", "CT4", "T2"]:
          if term in title.upper():
               terminal = term
               break
@@ -90,26 +90,40 @@ def process_and_store_all_documents(documents):
         print("No documents to process.")
         return
 
+    # 1. Deduplicate: Keep only the latest record for each unique server (hostname)
+    # Sort by timestamp descending so the first one we find is the latest
+    documents.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    
+    unique_docs = {}
+    for doc in documents:
+        # Generate text and metadata to get the hostname
+        doc_text, terminal, hostname = process_document(doc)
+        
+        # Use hostname + terminal as the unique key
+        key = f"{terminal}_{hostname}"
+        if key not in unique_docs:
+            unique_docs[key] = {
+                "id": str(doc.get("_id")),
+                "text": doc_text,
+                "metadata": {
+                    "title": doc.get("title", "Unknown"),
+                    "terminal": terminal,
+                    "hostname": hostname,
+                    "url": doc.get("url", "Unknown"),
+                    "timestamp": str(doc.get("timestamp", ""))
+                }
+            }
+    
+    print(f"Deduplicated {len(documents)} total records to {len(unique_docs)} unique latest server states.")
+    
     ids = []
     documents_texts = []
     metadatas = []
-
-    for doc in documents:
-        doc_id = str(doc.get("_id"))
-        ids.append(doc_id)
-        
-        # Process text and metadata
-        doc_text, terminal, hostname = process_document(doc)
-        documents_texts.append(doc_text)
-        
-        # Create enhanced metadata
-        metadatas.append({
-            "title": doc.get("title", "Unknown"),
-            "terminal": terminal,
-            "hostname": hostname,
-            "url": doc.get("url", "Unknown"),
-            "timestamp": str(doc.get("timestamp", ""))
-        })
+    
+    for key, val in unique_docs.items():
+        ids.append(val["id"])
+        documents_texts.append(val["text"])
+        metadatas.append(val["metadata"])
 
     print(f"Generating semantic embeddings for {len(documents_texts)} documents...")
     # Generate embeddings
