@@ -32,7 +32,8 @@ ADBOT is a high-performance RAG (Retrieval-Augmented Generation) chatbot system 
 3. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
-   ```
+   ``` 
+   \
 4. **Environment Variables**:
    Create a `.env` file in the `backend/` folder:
    ```env
